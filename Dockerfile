@@ -1,29 +1,20 @@
-FROM php:8.1 as php
+FROM php:8.1.0-fpm as php
+# FROM php:8.1-cli
+# Set working directory
+COPY ./ /var/www/html
 
-RUN apt-get update -y
-RUN apt-get install -y unzip libpq-dev libcurl4-gnutls-dev
+# RUN apt-get update -y
+# RUN apt-get install -y unzip libpq-dev libcurl4-gnutls-dev
 RUN docker-php-ext-install pdo pdo_mysql bcmath
-
-RUN pecl install -o -f redis \
-    && rm -rf /tmp/pear \
-    && docker-php-ext-enable redis
+RUN docker-php-ext-enable pdo_mysql
 
 WORKDIR /var/www/html
 COPY . .
 
 COPY --from=composer:2.3.5 /usr/bin/composer /usr/bin/composer
 
-ENV PORT=8000
-ENTRYPOINT [ "docker/entrypoint.sh" ]
+ENTRYPOINT [ "./entrypoint.sh" ]
 
-#==============
-
-FROM node:14-alpine as node
-
-WORKDIR /var/www/html
-COPY . .
-
-RUN npm install --global cross-env
-RUN npm install
-
-VOLUME /var/www/html/node_module
+# Expose port 9000 and start php-fpm server
+EXPOSE 9000
+CMD ["php-fpm"]
